@@ -83,6 +83,8 @@ public class ListingServlet extends HttpServlet {
         // return if cannot find user in user db
         if (user == null) {
             logger.warn("Cannot find seller's info {} in user db", sellerId);
+            response.setStatus(500);
+            response.getWriter().write("Cannot locate user information in the database");
             return;
         }
 

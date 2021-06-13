@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.treasurehunt.treasurehunt.entity.Listing;
 import com.treasurehunt.treasurehunt.entity.SearchListingsRequestBody;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -16,7 +17,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -47,43 +47,82 @@ public class Elasticsearch {
         sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
         sourceBuilder.sort(new FieldSortBuilder("price").order(SortOrder.ASC));
 
+        // changed will track if query is empty at the end
+        boolean changed = false;
+
         // Configure searchQuery and filters
-        if (requestBody.getKeyword() != null) {
 
-            // BoolQueryBuilder is used to assemble query conditions.
-            BoolQueryBuilder boolBuilder = QueryBuilders.boolQuery();
-
+        // BoolQueryBuilder is used to assemble query conditions.
+        BoolQueryBuilder boolBuilder = QueryBuilders.boolQuery();
+        if (requestBody.getKeyword() != null && !requestBody.getKeyword().trim().equals("")) {
             // Fuzzy searches keyword in title and description fields
-            boolBuilder.must(QueryBuilders.multiMatchQuery(requestBody.getKeyword(), "title", "description")
-                                          .fuzziness("AUTO"));
-            if (requestBody.getCondition() != null) {
-                boolBuilder.filter(QueryBuilders.termQuery("item_condition", requestBody.getCondition()));
-            }
-            if (requestBody.getDistance() != null) {
-                boolBuilder.filter(QueryBuilders.geoDistanceQuery("geo_location")
-                                                .point(requestBody.getLatitude(), requestBody.getLongitude())
-                                                .distance(requestBody.getDistance(), DistanceUnit.MILES));
-            }
-            if (requestBody.getMaxPrice() != 0.0) {
-                boolBuilder.filter(QueryBuilders.rangeQuery("price").lte(requestBody.getMaxPrice()));
-            }
-            if (requestBody.getMinPrice() != 0.0) {
-                boolBuilder.filter(QueryBuilders.rangeQuery("price").gte(requestBody.getMinPrice()));
-            }
-            if (requestBody.getTmeInterval() != 0) {
-                Instant now = Instant.now();
-                boolBuilder.filter(QueryBuilders.rangeQuery("date")
-                                                .from(now.minus(requestBody.getTmeInterval(), ChronoUnit.HOURS)));
-            }
-            sourceBuilder.query(boolBuilder);
+            String keyword = requestBody.getKeyword();
+            BoolQueryBuilder keywordQuery = QueryBuilders.boolQuery();
+            keywordQuery.should(QueryBuilders.matchQuery("title", keyword).fuzziness("AUTO"));
+            keywordQuery
+                    .should(QueryBuilders.matchQuery("category", StringUtils.capitalize(keyword)).fuzziness("AUTO"));
+            keywordQuery.should(QueryBuilders.multiMatchQuery(keyword, "brand", "description"));
+            boolBuilder.must(keywordQuery);
+            changed = true;
+        }
 
-        } else if (requestBody.getCategory() != null) {
-            TermQueryBuilder termQueryBuilder = new TermQueryBuilder("category", requestBody.getCategory());
-            sourceBuilder.query(termQueryBuilder);
-        } else {
+        if (requestBody.getCondition() != null && !requestBody.getCondition().trim().equals("")) {
+            String queryCondition = requestBody.getCondition();
+            List<String> strings = new ArrayList<>();
+            boolean finished = false;
+            int index = 0;
+            String[] conditions = new String[]{"New", "Used - Like new", "Used - Good", "Used - Fair"};
+            while (!finished && index < conditions.length) {
+                strings.add(conditions[index]);
+                if (queryCondition.equals(conditions[index++])) {
+                    finished = true;
+                }
+            }
+            String[] args = strings.toArray(new String[0]);
+            logger.info("Got condition {} and generated args {}", requestBody.getCondition(), args);
+            boolBuilder.filter(QueryBuilders.termsQuery("item_condition", args));
+            changed = true;
+        }
+
+        if (requestBody.getLatitude() != 0 && requestBody.getLongitude() != 0) {
+            String distance = "20";
+            if (requestBody.getDistance() != null && !requestBody.getDistance().trim().equals("")) {
+                distance = requestBody.getDistance();
+            }
+            boolBuilder.filter(QueryBuilders.geoDistanceQuery("geo_location")
+                                            .point(requestBody.getLatitude(), requestBody.getLongitude())
+                                            .distance(distance, DistanceUnit.MILES));
+            changed = true;
+        }
+
+        if (requestBody.getMaxPrice() != 0.0) {
+            boolBuilder.filter(QueryBuilders.rangeQuery("price").lte(requestBody.getMaxPrice()));
+            changed = true;
+        }
+
+        if (requestBody.getMinPrice() != 0.0) {
+            boolBuilder.filter(QueryBuilders.rangeQuery("price").gte(requestBody.getMinPrice()));
+            changed = true;
+        }
+
+        if (requestBody.getTimeInterval() != 0) {
+            Instant now = Instant.now();
+            boolBuilder.filter(QueryBuilders.rangeQuery("date")
+                                            .from(now.minus(requestBody.getTimeInterval(), ChronoUnit.DAYS)));
+            changed = true;
+        }
+
+        if (requestBody.getCategory() != null && !requestBody.getCategory().trim().equals("")) {
+            boolBuilder.filter(QueryBuilders.termQuery("category", requestBody.getCategory()));
+            changed = true;
+        }
+
+        if (!changed) {
             logger.warn("Elasticsearch query does not contain keyword or category");
             throw new ElasticsearchException("Search query does not contain keyword or category");
         }
+
+        sourceBuilder.query(boolBuilder);
 
         searchRequest.source(sourceBuilder);
 

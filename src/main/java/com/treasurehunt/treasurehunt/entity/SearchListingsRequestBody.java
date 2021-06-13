@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonDeserialize(builder = Listing.Builder.class)
+@JsonDeserialize(builder = SearchListingsRequestBody.Builder.class)
 public class SearchListingsRequestBody {
 
     @JsonProperty("keyword")
@@ -20,16 +20,16 @@ public class SearchListingsRequestBody {
     private double latitude;
     @JsonProperty("longitude")
     private double longitude;
-    @JsonProperty("distance")
+    @JsonProperty("radius")
     private String distance;
-    @JsonProperty("maxPrice")
+    @JsonProperty("max_price")
     private double maxPrice;
-    @JsonProperty("minPrice")
+    @JsonProperty("min_price")
     private double minPrice;
-    @JsonProperty("timeInterval")
+    @JsonProperty("time_interval")
     private long timeInterval;
 
-    public SearchListingsRequestBody(Builder builder) {
+    private SearchListingsRequestBody(Builder builder) {
         this.keyword = builder.keyword;
         this.category = builder.category;
         this.condition = builder.condition;
@@ -76,7 +76,7 @@ public class SearchListingsRequestBody {
         return minPrice;
     }
 
-    public long getTmeInterval() {
+    public long getTimeInterval() {
         return timeInterval;
     }
 
@@ -84,14 +84,23 @@ public class SearchListingsRequestBody {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Builder {
 
+        @JsonProperty("keyword")
         private String keyword;
+        @JsonProperty("category")
         private String category;
+        @JsonProperty("condition")
         private String condition;
+        @JsonProperty("latitude")
         private double latitude;
+        @JsonProperty("longitude")
         private double longitude;
+        @JsonProperty("radius")
         private String distance;
+        @JsonProperty("max_price")
         private double maxPrice;
+        @JsonProperty("min_price")
         private double minPrice;
+        @JsonProperty("time_interval")
         private long timeInterval;
 
         public Builder setKeyword(String keyword) {

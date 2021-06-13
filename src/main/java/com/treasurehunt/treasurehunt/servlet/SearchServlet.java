@@ -1,11 +1,13 @@
 package com.treasurehunt.treasurehunt.servlet;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.treasurehunt.treasurehunt.db.elasticsearch.Elasticsearch;
 import com.treasurehunt.treasurehunt.db.elasticsearch.ElasticsearchException;
 import com.treasurehunt.treasurehunt.entity.Listing;
 import com.treasurehunt.treasurehunt.entity.SearchListingsRequestBody;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @WebServlet(name = "SearchServlet", urlPatterns = {"/api/search"})
 public class SearchServlet extends HttpServlet {
@@ -26,59 +29,37 @@ public class SearchServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException,
             IOException {
 
-        SearchListingsRequestBody.Builder builder = new SearchListingsRequestBody.Builder();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-        // Two search mode:
-        // 1. keyword associated with filters; 2. category without filters
-        String keyword = request.getParameter("keyword");
-        if (keyword != null) {
-            // Retrieve all filters from request url
-            builder.setKeyword(keyword);
+        // Parse params into generic json object
+        JSONObject jsonObj = new JSONObject();
+        Map<String, String[]> params = request.getParameterMap();
+        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+            String v[] = entry.getValue();
+            Object o = (v.length == 1) ? v[0] : v;
+            jsonObj.put(entry.getKey(), o);
         }
+        logger.info("converted with JSONObject: {}", jsonObj.toString());
 
-        if (request.getParameter("radius") != null && request.getParameter("latitude") != null && request
-                .getParameter("longitude") != null) {
-            builder.setLatitude(Double.parseDouble(request.getParameter("latitude")))
-                   .setLongitude(Double.parseDouble(request.getParameter("longitude")))
-                   .setDistance(request.getParameter("radius"));
+        // Parse json object into SearchListingsRequestBody
+        SearchListingsRequestBody requestBody;
+        try {
+            requestBody = objectMapper
+                    .readValue(jsonObj.toString(), SearchListingsRequestBody.class);
+            logger.info("Converted params to class {}", objectMapper.writeValueAsString(requestBody));
+        } catch (JsonProcessingException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().println("Invalid inputs, please check and resubmit");
+            return;
         }
-
-        if (request.getParameter("condition") != null) {
-            builder.setCondition(request.getParameter("condition"));
+//
+        // Parse for bad inputs
+        if (requestBody.getMaxPrice() < 0 || requestBody.getTimeInterval() < 0 || requestBody
+                .getMaxPrice() < requestBody.getMinPrice()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().println("Errors in entries, please try again");
+            return;
         }
-
-        if (request.getParameter("max_price") != null) {
-            double max = Double.parseDouble(request.getParameter("max_price"));
-            if (max < 0.0) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().println("price cannot be negative");
-                return;
-            } else {
-                builder.setMaxPrice(max);
-            }
-        }
-
-        if (request.getParameter("min_price") != null) {
-            double min = Double.parseDouble(request.getParameter("min_price"));
-            builder.setMinPrice(min);
-        }
-
-        if (request.getParameter("time_interval") != null) {
-            long interval = Long.parseLong(request.getParameter("time_interval"));
-            if (interval < 0) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().println("Interval cannot be negative");
-                return;
-            } else {
-                builder.setTimeInterval(interval);
-            }
-        }
-
-        if (request.getParameter("category") != null) {
-            builder.setCategory(request.getParameter("category"));
-        }
-
-        SearchListingsRequestBody requestBody = builder.build();
 
         // Get search results
         RestHighLevelClient client = (RestHighLevelClient) request.getServletContext().getAttribute("es-client");
