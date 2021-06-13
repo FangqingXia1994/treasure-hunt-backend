@@ -1,4 +1,4 @@
-package com.treasurehunt.treasurehunt.db.MySQL;
+package com.treasurehunt.treasurehunt.db.mysql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -9,8 +9,6 @@ import java.io.InputStream;
 import java.util.Properties;
 
 class MySQLConnectionPool {
-    private static final String CLOUD_SQL_CONNECTION_NAME = "treasurehunt-314717:us-central1:listingdbtest";
-    private static final String DB_NAME = "listingtest";
     public final DataSource pool;
 
     MySQLConnectionPool() throws IOException {
@@ -24,14 +22,18 @@ class MySQLConnectionPool {
         String sql_user = prop.getProperty("sql_user");
         String sql_password = prop.getProperty("sql_password");
 
+        // Deployment: move back outside
+        String cloud_sql_connection_name = prop.getProperty("cloud_sql_connection_name");
+        String db_name = prop.getProperty("db_name");
+
         // The configuration object specifies behavior for the connection pool
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(String.format("jdbc:mysql:///%s", DB_NAME));
+        config.setJdbcUrl(String.format("jdbc:mysql:///%s", db_name));
         config.setUsername(sql_user);
         config.setPassword(sql_password);
 
         config.addDataSourceProperty("socketFactory", "com.google.cloud.sql.mysql.SocketFactory");
-        config.addDataSourceProperty("cloudSqlInstance", CLOUD_SQL_CONNECTION_NAME);
+        config.addDataSourceProperty("cloudSqlInstance", cloud_sql_connection_name);
         config.setDriverClassName("com.mysql.cj.jdbc.Driver");
 
         // Specify a comma delimited list of preferred IP types for connecting to instance

@@ -37,12 +37,13 @@ class ElasticsearchClient {
         // Setup Elasticsearch Low Level REST client
         RestClientBuilder builder = RestClient.builder(
                 new HttpHost(ELASTIC_SEARCH_ENDPOINT, 9200))
-                .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder) {
-                        return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                });
+                                              .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                                                  @Override
+                                                  public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder) {
+                                                      return httpAsyncClientBuilder
+                                                              .setDefaultCredentialsProvider(credentialsProvider);
+                                                  }
+                                              });
 
         // Return new Elasticsearch High Level REST client
         return new RestHighLevelClient(builder);

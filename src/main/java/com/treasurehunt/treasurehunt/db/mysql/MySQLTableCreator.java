@@ -1,14 +1,19 @@
-package com.treasurehunt.treasurehunt.db.MySQL;
+package com.treasurehunt.treasurehunt.db.mysql;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 
 public class MySQLTableCreator {
+
     public static void main(String[] args) {
+        Logger logger = LoggerFactory.getLogger(MySQLTableCreator.class);
         // Step 1 Connect to MySQL.
         try {
-            System.out.println("Connecting to Cloud SQL");
+            logger.debug("Connecting to Cloud SQL");
             MySQLConnectionPool mySQLConnectionPool = new MySQLConnectionPool();
             DataSource pool = mySQLConnectionPool.pool;
 
@@ -33,10 +38,13 @@ public class MySQLTableCreator {
                 sql = "CREATE TABLE users ( "
                         + "user_id VARCHAR(255) NOT NULL, "
                         + "password VARCHAR(255) NOT NULL, "
+                        + "password_salt VARCHAR(255) NOT NULL, "
                         + "first_name VARCHAR(255) NOT NULL, "
                         + "last_name VARCHAR(255) NOT NULL, "
                         + "email VARCHAR(255) NOT NULL, "
                         + "address VARCHAR(255), "
+                        + "geo_location VARCHAR(255), "
+                        + "city_and_state VARCHAR(255), "
                         + "PRIMARY KEY (user_id) "
                         + ")";
                 statement.executeUpdate(sql);
@@ -46,14 +54,17 @@ public class MySQLTableCreator {
                         + "title VARCHAR(255) NOT NULL, "
                         + "price DOUBLE NOT NULL, "
                         + "category VARCHAR(255) NOT NULL, "
-                        + "description VARCHAR(255) NOT NULL, "
+                        + "description TEXT NOT NULL, "
                         + "item_condition VARCHAR(255) NOT NULL, "
                         + "brand VARCHAR(255), "
                         + "picture_urls JSON, "
                         + "seller_id VARCHAR(255) NOT NULL, "
                         + "seller_name VARCHAR(255) NOT NULL, "
+                        + "seller_email VARCHAR(255) NOT NULL, "
                         + "address VARCHAR(255) NOT NULL, "
-                        + "date TIMESTAMP, "
+                        + "date VARCHAR(255) NOT NULL, "
+                        + "geo_location VARCHAR(255) NOT NULL, "
+                        + "city_and_state VARCHAR(255) NOT NULL, "
                         + "PRIMARY KEY (listing_id), "
                         + "FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE"
                         + ")";
@@ -63,12 +74,11 @@ public class MySQLTableCreator {
                         + "user_id VARCHAR(255) NOT NULL,"
                         + "listing_id VARCHAR(255) NOT NULL,"
                         + "PRIMARY KEY (user_id, listing_id),"
-                        + "FOREIGN KEY (user_id) REFERENCES users(user_id),"
-                        + "FOREIGN KEY (listing_id) REFERENCES listings(listing_id)"
+                        + "FOREIGN KEY (user_id) REFERENCES users(user_id) "
                         + ")";
                 statement.executeUpdate(sql);
 
-                System.out.println("Tables Successfully Created");
+                logger.debug("Tables Successfully Created");
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -3,16 +3,15 @@ package com.treasurehunt.treasurehunt.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.json.JSONObject;
+
+import java.util.LinkedHashMap;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = Listing.Builder.class)
-
 public class Listing {
-    @JsonProperty("listingId")
+    @JsonProperty("listing_id")
     private String listingId;
     @JsonProperty("title")
     private String title;
@@ -20,24 +19,49 @@ public class Listing {
     private double price;
     @JsonProperty("category")
     private String category;
-    @JsonProperty("sellerId")
+    @JsonProperty("seller_id")
     private String sellerId;
-    @JsonProperty("sellerName")
+    @JsonProperty("seller_name")
     private String sellerName;
+    @JsonProperty("seller_email")
+    private String sellerEmail;
     @JsonProperty("description")
     private String description;
-    @JsonProperty("itemCondition")
+    @JsonProperty("item_condition")
     private String itemCondition;
     @JsonProperty("brand")
     private String brand;
     @JsonProperty("address")
-    @JsonRawValue
     private String address;
-    @JsonProperty("pictureUrls")
-    @JsonRawValue
-    private String pictureUrls;
+    @JsonProperty("picture_urls")
+    private LinkedHashMap<String, String> pictureUrls;
     @JsonProperty("date")
     private String date;
+    @JsonProperty("geo_location")
+    private GeocodeLocation geocodeLocation;
+    @JsonProperty("city_and_state")
+    private String cityAndState;
+
+    public Listing(Builder builder) {
+        this.listingId = builder.listingId;
+        this.title = builder.title;
+        this.price = builder.price;
+        this.category = builder.category;
+        this.sellerId = builder.sellerId;
+        this.sellerName = builder.sellerName;
+        this.sellerEmail = builder.sellerEmail;
+        this.description = builder.description;
+        this.itemCondition = builder.itemCondition;
+        this.address = builder.address;
+        this.brand = builder.brand;
+        this.pictureUrls = builder.pictureUrls;
+        this.date = builder.date;
+        this.geocodeLocation = builder.geocodeLocation;
+        this.cityAndState = builder.cityAndState;
+    }
+
+    public Listing() {
+    }
 
     public String getListingId() {
         return listingId;
@@ -63,6 +87,10 @@ public class Listing {
         return sellerName;
     }
 
+    public String getSellerEmail() {
+        return sellerEmail;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -79,7 +107,7 @@ public class Listing {
         return address;
     }
 
-    public String getPictureUrls() {
+    public LinkedHashMap<String, String> getPictureUrls() {
         return pictureUrls;
     }
 
@@ -87,39 +115,61 @@ public class Listing {
         return date;
     }
 
-    public Listing(Builder builder) {
-        this.listingId = builder.listingId;
-        this.title = builder.title;
-        this.price = builder.price;
-        this.category = builder.category;
-        this.sellerId = builder.sellerId;
-        this.sellerName = builder.sellerName;
-        this.description = builder.description;
-        this.itemCondition = builder.itemCondition;
-        this.address = builder.address;
-        this.brand = builder.brand;
-        this.pictureUrls = builder.pictureUrls;
-        this.date = builder.date;
+    public String getCityAndState() {
+        return cityAndState;
     }
 
-    public Listing() {
+    public GeocodeLocation getGeocodeLocation() {
+        return geocodeLocation;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Builder {
+        @JsonProperty("listing_id")
         private String listingId;
+
+        @JsonProperty("title")
         private String title;
+
+        @JsonProperty("price")
         private double price;
+
+        @JsonProperty("category")
         private String category;
+
+        @JsonProperty("seller_id")
         private String sellerId;
+
+        @JsonProperty("seller_name")
         private String sellerName;
+
+        @JsonProperty("seller_email")
+        private String sellerEmail;
+
+        @JsonProperty("description")
         private String description;
+
+        @JsonProperty("item_condition")
         private String itemCondition;
+
+        @JsonProperty("brand")
         private String brand;
+
+        @JsonProperty("address")
         private String address;
-        private String pictureUrls;
+
+        @JsonProperty("picture_urls")
+        private LinkedHashMap<String, String> pictureUrls;
+
+        @JsonProperty("date")
         private String date;
+
+        @JsonProperty("geo_location")
+        private GeocodeLocation geocodeLocation;
+
+        @JsonProperty("city_and_state")
+        private String cityAndState;
 
         public Builder setListingId(String listingId) {
             this.listingId = listingId;
@@ -130,6 +180,7 @@ public class Listing {
             this.title = title;
             return this;
         }
+
 
         public Builder setPrice(double price) {
             this.price = price;
@@ -148,6 +199,11 @@ public class Listing {
 
         public Builder setSellerName(String sellerName) {
             this.sellerName = sellerName;
+            return this;
+        }
+
+        public Builder setSellerEmail(String sellerEmail) {
+            this.sellerEmail = sellerEmail;
             return this;
         }
 
@@ -171,13 +227,23 @@ public class Listing {
             return this;
         }
 
-        public Builder setPictureUrls(String pictureUrls) {
+        public Builder setPictureUrls(LinkedHashMap<String, String> pictureUrls) {
             this.pictureUrls = pictureUrls;
             return this;
         }
 
         public Builder setDate(String date) {
             this.date = date;
+            return this;
+        }
+
+        public Builder setGeocodeLocation(GeocodeLocation geocodeLocation) {
+            this.geocodeLocation = geocodeLocation;
+            return this;
+        }
+
+        public Builder setCityAndState(String cityAndState) {
+            this.cityAndState = cityAndState;
             return this;
         }
 

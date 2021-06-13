@@ -1,7 +1,8 @@
-package com.treasurehunt.treasurehunt.db.MySQL;
+package com.treasurehunt.treasurehunt.db.mysql;
 
-import com.treasurehunt.treasurehunt.entity.Listing;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -9,10 +10,14 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 @WebListener("Creates a connection pool that is stored in the Servlet's context for later use via attribute mysql-pool")
 public class MySQLConnectionPoolContextListener implements ServletContextListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(MySQLConnectionPoolContextListener.class);
 
     private void createTable(DataSource pool) throws SQLException {
         // Safely attempt to create the table schema.
@@ -57,7 +62,7 @@ public class MySQLConnectionPoolContextListener implements ServletContextListene
         // Test MySQL connection
         try {
             createTable(pool);
-            System.out.println("Successfully created connection to MySQL");
+            logger.info("Successfully created connection to MySQL");
         } catch (SQLException ex) {
             throw new RuntimeException(
                     "Unable to verify table schema, please double check and try again.",

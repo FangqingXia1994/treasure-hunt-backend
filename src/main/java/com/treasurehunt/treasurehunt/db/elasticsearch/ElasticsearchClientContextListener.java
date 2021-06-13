@@ -6,6 +6,8 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -20,6 +22,8 @@ import java.util.Map;
         "es-client")
 public class ElasticsearchClientContextListener implements ServletContextListener {
 
+    private static final Logger logger = LoggerFactory.getLogger(ElasticsearchClientContextListener.class);
+
     private void testESConnection(RestHighLevelClient client) throws ElasticsearchException {
         try {
             // Indexing
@@ -30,7 +34,7 @@ public class ElasticsearchClientContextListener implements ServletContextListene
                     .id("1").source(jsonMap);
             client.index(indexRequest, RequestOptions.DEFAULT);
 
-            System.out.printf("Indexed document to index \"%s\" with id %s%n",
+            logger.info("Indexed document to index \"{}\" with id {}",
                     indexRequest.index(),
                     indexRequest.id());
 
@@ -38,7 +42,7 @@ public class ElasticsearchClientContextListener implements ServletContextListene
             GetRequest getRequest = new GetRequest("testing", "1");
             GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
 
-            System.out.printf("Retrieved document: {Id: %s, Description: %s, Test Time: %s}%n",
+            logger.info("Retrieved document: {Id: {}, Description: {}, Test Time: {}}",
                     getResponse.getId(),
                     getResponse.getSource().get("description"),
                     getResponse.getSource().get("timestamp"));
@@ -77,7 +81,7 @@ public class ElasticsearchClientContextListener implements ServletContextListene
         // Test Elasticsearch connection
         try {
             testESConnection(client);
-            System.out.println("Successfully created connection to Elasticsearch");
+            logger.info("Successfully created connection to Elasticsearch");
         } catch (ElasticsearchException ex) {
             throw new RuntimeException(
                     "Unable to verify Elasticsearch index, please double check and try again.",
